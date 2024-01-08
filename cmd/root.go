@@ -12,10 +12,6 @@ type cmdConfig struct {
 	inventoryFile string
 }
 
-var (
-	config = cmdConfig{} //nolint: gochecknoglobals // deliberately allowing
-)
-
 type RootCmd struct {
 	rootCmd *cobra.Command
 	config  *cmdConfig
@@ -23,7 +19,9 @@ type RootCmd struct {
 
 func NewCmd() *RootCmd {
 	return &RootCmd{
-		config: &config,
+		config: &cmdConfig{
+			inventoryFile: "",
+		},
 		rootCmd: &cobra.Command{
 			Use:   "ansible-superputty",
 			Short: "A CLI tool to generate SuperPuTTY configuration",
