@@ -18,10 +18,18 @@ type File struct {
 	Hosts []Host
 }
 
-type AINIParser func(r io.Reader) (*aini.InventoryData, error)
+type AINIParser interface {
+	Parse(r io.Reader) (*aini.InventoryData, error)
+}
+
+type DefaultAINIParser struct{}
+
+func (p DefaultAINIParser) Parse(r io.Reader) (*aini.InventoryData, error) {
+	return aini.Parse(r)
+}
 
 func (f *File) Parse(ainiParser AINIParser, reader io.Reader) error {
-	data, err := ainiParser(reader)
+	data, err := ainiParser.Parse(reader)
 	if err != nil {
 		return fmt.Errorf("ansible inventory file parse error: %w", err)
 	}

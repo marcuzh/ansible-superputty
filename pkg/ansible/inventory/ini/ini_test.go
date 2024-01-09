@@ -14,6 +14,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type AlwaysErrorsAINIParser struct{}
+
+func (p AlwaysErrorsAINIParser) Parse(_ io.Reader) (*aini.InventoryData, error) {
+	return nil, errors.New("always error")
+}
 func TestFile_Parse_ReturnExpectedHosts(t *testing.T) {
 	t.Parallel()
 
@@ -65,7 +70,7 @@ func TestFile_Parse_ReturnExpectedHosts(t *testing.T) {
 			t.Parallel()
 
 			invFile := ini.File{}
-			err := invFile.Parse(aini.Parse, strings.NewReader(strings.Join(test.inputData, "\n")))
+			err := invFile.Parse(ini.DefaultAINIParser{}, strings.NewReader(strings.Join(test.inputData, "\n")))
 
 			require.NoError(t, err)
 			assert.ElementsMatchf(t, test.expectedHosts, invFile.Hosts, "expected hosts to be equal")
@@ -74,12 +79,8 @@ func TestFile_Parse_ReturnExpectedHosts(t *testing.T) {
 }
 
 func TestFile_Parse_ReturnError(t *testing.T) {
-	alwaysErrorsParser := func(r io.Reader) (*aini.InventoryData, error) {
-		return nil, errors.New("always errors")
-	}
-
 	invFile := ini.File{}
-	err := invFile.Parse(alwaysErrorsParser, strings.NewReader(""))
+	err := invFile.Parse(AlwaysErrorsAINIParser{}, strings.NewReader(""))
 
 	require.Error(t, err)
 }
