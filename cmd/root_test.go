@@ -144,7 +144,6 @@ func setupRootCmd(args []string, stdOut io.Writer, stdErr io.Writer) (*cmd.RootC
 		return nil, err
 	}
 
-	rootCmd.Setup()
 	rootCmd.SetOut(stdOut)
 	rootCmd.SetErr(stdErr)
 	rootCmd.SetArgs(args)

@@ -11,8 +11,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	rootCmd.Setup()
-
 	err = rootCmd.Execute()
 	if err != nil {
 		log.Fatal(err)

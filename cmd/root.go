@@ -26,16 +26,21 @@ func NewRootCmd() (*RootCmd, error) {
 	}
 
 	cobraCmd := newCobraCommand()
-	err := configureFlags(&cobraCmd, &flags)
+	err := configureFlags(cobraCmd, &flags)
 	if err != nil {
 		return nil, err
 	}
 
-	return &RootCmd{
+	rootCmd := &RootCmd{
 		executor: &cmd.DefaultCommandExecutor{},
 		config:   &flags,
-		cobraCmd: &cobraCmd,
-	}, nil
+		cobraCmd: cobraCmd,
+	}
+
+	cobraCmd.RunE = func(cmd *cobra.Command, args []string) error {
+		return rootCmd.executor.Execute(rootCmd.config.inventoryFile)
+	}
+	return rootCmd, nil
 }
 
 func (c *RootCmd) WithExecutor(executor cmd.CommandExecutor) *RootCmd {
@@ -55,12 +60,6 @@ func (c *RootCmd) SetErr(writer io.Writer) {
 	c.cobraCmd.SetErr(writer)
 }
 
-func (c *RootCmd) Setup() {
-	c.cobraCmd.RunE = func(cmd *cobra.Command, args []string) error {
-		return c.executor.Execute(c.config.inventoryFile)
-	}
-}
-
 func (c *RootCmd) Execute() error {
 	return c.cobraCmd.Execute()
 }
@@ -70,11 +69,11 @@ func configureFlags(command *cobra.Command, flags *cmdFlags) error {
 	return command.MarkFlagRequired(inventoryFileFlag)
 }
 
-func newCobraCommand() cobra.Command {
+func newCobraCommand() *cobra.Command {
 	command := cobra.Command{
 		Use:   "ansible-superputty",
 		Short: "A CLI tool to generate SuperPuTTY configuration",
 		Long:  `A CLI tool to generate SuperPuTTY configuration`,
 	}
-	return command
+	return &command
 }
