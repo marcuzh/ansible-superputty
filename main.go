@@ -6,11 +6,12 @@ import (
 )
 
 func main() {
-	rootCmd := cmd.NewCmd()
-	err := rootCmd.Setup()
+	rootCmd, err := cmd.NewRootCmd()
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	rootCmd.Setup()
 
 	err = rootCmd.Execute()
 	if err != nil {

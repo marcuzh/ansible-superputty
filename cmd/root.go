@@ -3,59 +3,78 @@ package cmd
 import (
 	"io"
 
+	"github.com/marcuzh/ansible-superputty/pkg/cmd"
+
 	"github.com/spf13/cobra"
 )
 
 const inventoryFileFlag = "inventory"
 
-type cmdConfig struct {
+type cmdFlags struct {
 	inventoryFile string
 }
 
 type RootCmd struct {
-	rootCmd *cobra.Command
-	config  *cmdConfig
+	cobraCmd *cobra.Command
+	config   *cmdFlags
+	executor cmd.CommandExecutor
 }
 
-func NewCmd() *RootCmd {
-	return &RootCmd{
-		config: &cmdConfig{
-			inventoryFile: "",
-		},
-		rootCmd: &cobra.Command{
-			Use:   "ansible-superputty",
-			Short: "A CLI tool to generate SuperPuTTY configuration",
-			Long:  `A CLI tool to generate SuperPuTTY configuration`,
-		},
+func NewRootCmd() (*RootCmd, error) {
+	flags := cmdFlags{
+		inventoryFile: "",
 	}
+
+	cobraCmd := newCobraCommand()
+	err := configureFlags(&cobraCmd, &flags)
+	if err != nil {
+		return nil, err
+	}
+
+	return &RootCmd{
+		executor: &cmd.DefaultCommandExecutor{},
+		config:   &flags,
+		cobraCmd: &cobraCmd,
+	}, nil
+}
+
+func (c *RootCmd) WithExecutor(executor cmd.CommandExecutor) *RootCmd {
+	c.executor = executor
+	return c
 }
 
 func (c *RootCmd) SetArgs(args []string) {
-	c.rootCmd.SetArgs(args)
+	c.cobraCmd.SetArgs(args)
 }
 
 func (c *RootCmd) SetOut(writer io.Writer) {
-	c.rootCmd.SetOut(writer)
+	c.cobraCmd.SetOut(writer)
 }
 
 func (c *RootCmd) SetErr(writer io.Writer) {
-	c.rootCmd.SetErr(writer)
+	c.cobraCmd.SetErr(writer)
 }
 
-func (c *RootCmd) Setup() error {
-	c.rootCmd.Flags().StringVarP(&c.config.inventoryFile, inventoryFileFlag, "i", "", "path to ansible inventory file")
-	err := c.rootCmd.MarkFlagRequired(inventoryFileFlag)
-	if err != nil {
-		return err
+func (c *RootCmd) Setup() {
+	c.cobraCmd.RunE = func(cmd *cobra.Command, args []string) error {
+		return c.executor.Execute(c.config.inventoryFile)
 	}
-	c.rootCmd.RunE = c.run
-	return nil
 }
 
 func (c *RootCmd) Execute() error {
-	return c.rootCmd.Execute()
+	return c.cobraCmd.Execute()
 }
 
-func (c *RootCmd) run(_ *cobra.Command, _ []string) error {
-	return nil
+func configureFlags(command *cobra.Command, flags *cmdFlags) error {
+	command.Flags().StringVarP(&flags.inventoryFile, inventoryFileFlag, "i", "", "path to ansible inventory file")
+	return command.MarkFlagRequired(inventoryFileFlag)
+}
+
+func newCobraCommand() cobra.Command {
+	command := cobra.Command{
+		Use:   "ansible-superputty",
+		Short: "A CLI tool to generate SuperPuTTY configuration",
+		Long:  `A CLI tool to generate SuperPuTTY configuration`,
+	}
+	return command
 }
