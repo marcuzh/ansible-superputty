@@ -42,8 +42,7 @@ func Test_ExecuteCommand(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			bStdOut, bStdErr := bytes.NewBufferString(""), bytes.NewBufferString("")
 
-			rootCmd, err := setupRootCmd(strings.Split(tc.args, " "), bStdOut, bStdErr)
-			require.NoError(t, err)
+			rootCmd := setupRootCmd(strings.Split(tc.args, " "), bStdOut, bStdErr)
 
 			mockCmdExecutor := new(MockCmdExecutor)
 			mockCmdExecutor.On("Execute", tc.expectedCmdFlags).Return(tc.returnArgs)
@@ -51,7 +50,7 @@ func Test_ExecuteCommand(t *testing.T) {
 
 			rootCmd.WithExecutor(mockCmdExecutor)
 
-			err = rootCmd.Execute()
+			err := rootCmd.Execute()
 			require.NoError(t, err)
 
 			stdOut, err := io.ReadAll(bStdOut)
@@ -114,8 +113,7 @@ func Test_ExecuteCommand_Errors(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			bStdOut, bStdErr := bytes.NewBufferString(""), bytes.NewBufferString("")
 
-			rootCmd, err := setupRootCmd(strings.Split(tc.args, " "), bStdOut, bStdErr)
-			require.NoError(t, err)
+			rootCmd := setupRootCmd(strings.Split(tc.args, " "), bStdOut, bStdErr)
 
 			mockCmdExecutor := new(MockCmdExecutor)
 			tc.mockBehaviourSetup(mockCmdExecutor)
@@ -123,7 +121,7 @@ func Test_ExecuteCommand_Errors(t *testing.T) {
 
 			rootCmd.WithExecutor(mockCmdExecutor)
 
-			err = rootCmd.Execute()
+			err := rootCmd.Execute()
 			require.Error(t, err)
 
 			stdOut, err := io.ReadAll(bStdOut)
@@ -138,15 +136,12 @@ func Test_ExecuteCommand_Errors(t *testing.T) {
 	}
 }
 
-func setupRootCmd(args []string, stdOut io.Writer, stdErr io.Writer) (*cmd.RootCmd, error) {
-	rootCmd, err := cmd.NewRootCmd()
-	if err != nil {
-		return nil, err
-	}
+func setupRootCmd(args []string, stdOut io.Writer, stdErr io.Writer) *cmd.RootCmd {
+	rootCmd := cmd.NewRootCmd()
 
 	rootCmd.SetOut(stdOut)
 	rootCmd.SetErr(stdErr)
 	rootCmd.SetArgs(args)
 
-	return rootCmd, nil
+	return rootCmd
 }

@@ -3,6 +3,8 @@ package cmd
 import (
 	"io"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/marcuzh/ansible-superputty/pkg/cmd"
 
 	"github.com/spf13/cobra"
@@ -20,16 +22,13 @@ type RootCmd struct {
 	executor cmd.CommandExecutor
 }
 
-func NewRootCmd() (*RootCmd, error) {
+func NewRootCmd() *RootCmd {
 	flags := cmdFlags{
 		inventoryFile: "",
 	}
 
 	cobraCmd := newCobraCommand()
-	err := configureFlags(cobraCmd, &flags)
-	if err != nil {
-		return nil, err
-	}
+	configureFlags(cobraCmd, &flags)
 
 	rootCmd := &RootCmd{
 		executor: &cmd.DefaultCommandExecutor{},
@@ -40,7 +39,8 @@ func NewRootCmd() (*RootCmd, error) {
 	cobraCmd.RunE = func(cmd *cobra.Command, args []string) error {
 		return rootCmd.executor.Execute(rootCmd.config.inventoryFile)
 	}
-	return rootCmd, nil
+
+	return rootCmd
 }
 
 func (c *RootCmd) WithExecutor(executor cmd.CommandExecutor) *RootCmd {
@@ -64,9 +64,12 @@ func (c *RootCmd) Execute() error {
 	return c.cobraCmd.Execute()
 }
 
-func configureFlags(command *cobra.Command, flags *cmdFlags) error {
+func configureFlags(command *cobra.Command, flags *cmdFlags) {
 	command.Flags().StringVarP(&flags.inventoryFile, inventoryFileFlag, "i", "", "path to ansible inventory file")
-	return command.MarkFlagRequired(inventoryFileFlag)
+	err := command.MarkFlagRequired(inventoryFileFlag)
+	if err != nil {
+		log.Fatalf("error marking flag as required: %v", err)
+	}
 }
 
 func newCobraCommand() *cobra.Command {
